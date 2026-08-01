@@ -12,11 +12,15 @@ inherits (works out of the box).
 
 from __future__ import annotations
 
+import logging
 import os
+import urllib.error
 import urllib.request
 from pathlib import Path
 
 import shodan
+
+log = logging.getLogger(__name__)
 
 
 class ShodanConfigError(RuntimeError):
@@ -30,17 +34,16 @@ def _read_key() -> str:
     p = Path.home() / ".shodan" / "api_key"
     if p.exists():
         return p.read_text(encoding="utf-8").strip()
-    raise ShodanConfigError(
-        "no Shodan API key — set SHODAN_API_KEY or create ~/.shodan/api_key"
-    )
+    raise ShodanConfigError("no Shodan API key — set SHODAN_API_KEY or create ~/.shodan/api_key")
 
 
 def _egress_ip() -> str | None:
     for url in ("https://api.ipify.org", "https://ifconfig.me/ip"):
         try:
-            with urllib.request.urlopen(url, timeout=6) as r:  # noqa: S310
+            with urllib.request.urlopen(url, timeout=6) as r:
                 return r.read().decode().strip()
-        except Exception:
+        except (urllib.error.URLError, TimeoutError, OSError) as exc:
+            log.debug("egress lookup failed for %s: %s", url, exc)
             continue
     return None
 

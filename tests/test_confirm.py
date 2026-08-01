@@ -54,4 +54,3 @@ def test_describe_overrides_would_do() -> None:
     preview = op(ips="10.0.0.1")
     assert isinstance(preview, Preview)
     assert preview.would_do == "scan 10.0.0.1 with these ports"
-

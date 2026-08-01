@@ -10,7 +10,8 @@ from __future__ import annotations
 from collections.abc import Callable
 from typing import Any
 
-from mcp_safety_core.confirm import Preview, confirm_required as _core_confirm  # noqa: F401
+from mcp_safety_core.confirm import Preview
+from mcp_safety_core.confirm import confirm_required as _core_confirm
 
 SHODAN_TARGET_PARAMS = ("query", "ips", "ip", "name", "alert_id", "domain", "out_dir")
 
