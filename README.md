@@ -1,9 +1,21 @@
 # shodan-mcp
 
-MCP control surface that drives a **Shodan account end-to-end** — account/credits, host
-lookups, search, DNS, on-demand scans, and alerts — with a **credit-aware paginated
-ingest** that pages through the Shodan search cursor (100 results/page) and writes JSONL
-to disk. Thin wrapper over the official `shodan` Python client; no stubs.
+A governed Model Context Protocol server for Shodan. It gives an agent useful
+network-intelligence reads, bounded collection, and explicit approval boundaries for
+operations that spend credits or change account state.
+
+The server wraps the official `shodan` Python client and exposes typed results rather
+than shell output. Search ingestion is paginated, budget-aware, and written as JSONL so
+large investigations can be resumed and audited.
+
+## Safety model
+
+- Read-only mode removes every credit-spending or mutating tool from discovery.
+- `count` provides a free preflight before a search consumes query credits.
+- Scans and alert changes return an exact preview before a confirmed execution.
+- An optional egress assertion fails closed if traffic leaves through the wrong address.
+- Credentials stay in the Shodan CLI store or environment; they are never accepted as
+  MCP tool arguments.
 
 ## Install
 
@@ -12,19 +24,18 @@ uv venv .venv --python 3.13
 uv pip install -e . --python .venv/bin/python
 ```
 
-Register (Claude Code, user scope):
+Register with an MCP client:
 
 ```bash
-claude mcp add shodan -s user -- /home/revelri/Dev/revelri/shodan-mcp/.venv/bin/python -m shodan_mcp
+claude mcp add shodan -s user -- uv run --project /path/to/shodan-mcp shodan-mcp
 ```
 
 ## API key & egress
 
 - Key: `$SHODAN_API_KEY`, else `~/.shodan/api_key` (the shodan CLI's location).
-- **VPN-egress guard (opt-in, fail-closed):** set `SHODAN_MCP_EXPECTED_EXIT=<ip-or-substring>`
-  and the server refuses to run unless the current public egress IP matches — so it can't
-  accidentally query from your residential IP. For full namespace isolation, launch inside
-  the `wdvpn` netns, e.g. wrap the command in `sudo ip netns exec wdvpn su - revelri -c '…'`.
+- **Egress guard (opt-in, fail-closed):** set
+  `SHODAN_MCP_EXPECTED_EXIT=<ip-or-substring>` and the server refuses to start
+  unless its observed public egress matches.
 - **Recon-only mode:** `SHODAN_MCP_READ_ONLY=1` removes every credit-spending / mutating
   tool from the schema (`search_ingest`, `scan`, `alert_create`, `alert_remove`).
 
@@ -43,3 +54,19 @@ with `confirm=True`):**
 - `alert_create(name, ip, expires?)` / `alert_remove(alert_id)` — network monitors.
 
 Always `count()` a query first to size it before `search_ingest`.
+
+## Verification
+
+```bash
+uv sync --all-extras
+uv run ruff check .
+uv run pytest
+```
+
+The test suite is hermetic: it exercises confirmation and tool-surface behavior without
+calling Shodan. Live use requires your own account, key, credits, and authorization to
+inspect the target systems.
+
+## License
+
+MIT. See [LICENSE](LICENSE).
