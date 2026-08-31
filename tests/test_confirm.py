@@ -2,7 +2,10 @@
 
 from __future__ import annotations
 
+import asyncio
+
 from shodan_mcp.confirm import Preview, confirm_required
+from shodan_mcp.server import mcp
 
 
 def test_confirm_false_returns_preview_not_execute() -> None:
@@ -54,3 +57,10 @@ def test_describe_overrides_would_do() -> None:
     preview = op(ips="10.0.0.1")
     assert isinstance(preview, Preview)
     assert preview.would_do == "scan 10.0.0.1 with these ports"
+
+
+def test_confirm_gated_tools_are_tagged_for_read_only_mode() -> None:
+    """Read-only mode must be able to identify every confirm-gated action."""
+    tools = {tool.name: tool for tool in asyncio.run(mcp._list_tools())}
+    for name in ("search_ingest", "scan", "alert_create", "alert_remove"):
+        assert "mutating" in (tools[name].tags or set())

@@ -47,7 +47,11 @@ def tool(*args: Any, **kwargs: Any) -> Callable[[Any], Any]:
     """Register a tool, tagging confirm-gated mutators `mutating` (for read-only mode)."""
 
     def deco(fn: Any) -> Any:
-        if getattr(fn, "__shodan_mutates__", False):
+        # ``confirm_required`` is supplied by mcp-safety-core and marks its
+        # wrapper with ``__mutates__``.  Checking a Shodan-specific marker here
+        # left every confirmed action untagged, so read-only mode could not
+        # remove it from the exposed schema.
+        if getattr(fn, "__mutates__", False):
             tags: set[str] = set(kwargs.get("tags") or ())
             tags.add("mutating")
             kwargs["tags"] = tags
