@@ -6,7 +6,7 @@ requires-python = ">=3.11"
 license = "MIT"
 readme = "README.md"
 dependencies = [
-    "fastmcp>=3.4",
+    "fastmcp>=3.4.10",
     "shodan>=1.31",
     "mcp-safety-core @ git+https://github.com/revoydotdev/mcp-safety-core@v0.1.1",
 ]
